@@ -7,9 +7,15 @@ object SmartMatchEngine {
     fun guessContactName(number: String?, contacts: List<ContactSummary>): String? {
         val normalized = PhoneNumberNormalizer.normalize(number)
         if (normalized.isBlank()) return null
-        val exact = contacts.firstOrNull { contact -> contact.allPhoneNumbers().any { PhoneNumberNormalizer.normalize(it.value) == normalized } }
+
+        val exact = contacts.firstOrNull { contact ->
+            contact.allPhoneNumbers().any { phone -> PhoneNumberNormalizer.normalize(phone.value) == normalized }
+        }
         if (exact != null) return exact.displayName
-        val partial = contacts.firstOrNull { contact -> contact.allPhoneNumbers().any { PhoneNumberNormalizer.maybeMatches(it.value, normalized) } }
+
+        val partial = contacts.firstOrNull { contact ->
+            contact.allPhoneNumbers().any { phone -> PhoneNumberNormalizer.maybeMatches(phone.value, normalized) }
+        }
         return partial?.displayName
     }
 }

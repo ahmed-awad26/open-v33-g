@@ -7,40 +7,37 @@ data class ContactUrgencyScore(
     val bestTimeLabel: String? = null,
 )
 
-data class ContactUrgencyHistoryItem(
-    val timestamp: Long,
-    val visualType: ContactUrgencyVisualType,
-)
-
-enum class ContactUrgencyVisualType {
+enum class ContactUrgencyCallType {
+    MISSED,
+    INCOMING_ANSWERED,
     OUTGOING_ANSWERED,
     OUTGOING_NOT_ANSWERED,
     OUTGOING_REJECTED,
-    INCOMING_ANSWERED,
     INCOMING_CANCELED,
-    MISSED,
 }
 
+data class ContactUrgencyCallEntry(
+    val timestamp: Long,
+    val type: ContactUrgencyCallType,
+)
+
 object ContactUrgencyScoreEngine {
-    fun evaluate(
-        history: List<ContactUrgencyHistoryItem>,
-        now: Long = System.currentTimeMillis(),
-    ): ContactUrgencyScore {
+    fun evaluate(history: List<ContactUrgencyCallEntry>, now: Long = System.currentTimeMillis()): ContactUrgencyScore {
         if (history.isEmpty()) return ContactUrgencyScore(0, "Normal", emptyList(), null)
 
         var score = 0
         val hints = mutableListOf<String>()
 
-        val lastMissed = history.firstOrNull { it.visualType == ContactUrgencyVisualType.MISSED }
+        val lastMissed = history.firstOrNull { entry -> entry.type == ContactUrgencyCallType.MISSED }
         if (lastMissed != null && now - lastMissed.timestamp <= 3L * 24 * 60 * 60 * 1000) {
             score += 30
             hints += "Missed you recently"
         }
 
-        val lastOutgoing = history.firstOrNull {
-            it.visualType == ContactUrgencyVisualType.OUTGOING_ANSWERED ||
-                it.visualType == ContactUrgencyVisualType.OUTGOING_NOT_ANSWERED ||
-                it.visualType == ContactUrgencyVisualType.OUTGOING_REJECTED
+        val lastOutgoing = history.firstOrNull { entry ->
+            entry.type == ContactUrgencyCallType.OUTGOING_ANSWERED ||
+                entry.type == ContactUrgencyCallType.OUTGOING_NOT_ANSWERED ||
+                entry.type == ContactUrgencyCallType.OUTGOING_REJECTED
         }
         if (lastOutgoing != null) {
             val days = ((now - lastOutgoing.timestamp) / (24L * 60 * 60 * 1000)).toInt()
@@ -50,19 +47,18 @@ object ContactUrgencyScoreEngine {
             }
         }
 
-        val answered = history.count {
-            it.visualType == ContactUrgencyVisualType.INCOMING_ANSWERED ||
-                it.visualType == ContactUrgencyVisualType.OUTGOING_ANSWERED
+        val answered = history.count { entry ->
+            entry.type == ContactUrgencyCallType.INCOMING_ANSWERED || entry.type == ContactUrgencyCallType.OUTGOING_ANSWERED
         }
         val total = history.size.coerceAtLeast(1)
-        val responseRate = answered.toFloat() / total
+        val responseRate = answered.toFloat() / total.toFloat()
         if (responseRate >= 0.6f && total >= 4) {
             score += 20
             hints += "High response rate"
         }
 
-        val nightCalls = history.filter {
-            val hour = ((it.timestamp / 1000 / 60 / 60) % 24).toInt()
+        val nightCalls = history.filter { entry ->
+            val hour = ((entry.timestamp / 1000L / 60L / 60L) % 24L).toInt()
             hour in 20..23 || hour in 0..5
         }
         val best = if (nightCalls.size >= (history.size.coerceAtLeast(1) / 2)) "Night" else "Day"
