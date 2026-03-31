@@ -113,7 +113,6 @@ import com.opencontacts.core.common.SmartMatchEngine
 import com.opencontacts.core.common.ContactUrgencyScoreEngine
 import com.opencontacts.core.common.ContactUrgencyCallEntry
 import com.opencontacts.core.common.ContactUrgencyCallType
-import com.opencontacts.core.common.ContactCallBehavior
 import com.opencontacts.core.common.RingtonePreviewPlayer
 import com.opencontacts.core.model.ContactDraft
 import com.opencontacts.core.model.ContactSocialLink
