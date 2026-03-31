@@ -63,6 +63,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -110,6 +111,8 @@ import com.opencontacts.core.common.ContactCallBehaviorPreferences
 import com.opencontacts.core.common.PhoneNumberNormalizer
 import com.opencontacts.core.common.SmartMatchEngine
 import com.opencontacts.core.common.ContactUrgencyScoreEngine
+import com.opencontacts.core.common.ContactUrgencyCallEntry
+import com.opencontacts.core.common.ContactUrgencyCallType
 import com.opencontacts.core.common.ContactCallBehavior
 import com.opencontacts.core.common.RingtonePreviewPlayer
 import com.opencontacts.core.model.ContactDraft
@@ -358,7 +361,22 @@ private fun ContactDetailsContent(
     }
     val contactPhones = remember(contact.id) { contact.allPhoneNumbers().map { PhoneNumberNormalizer.normalize(it.value) }.filter { it.isNotBlank() } }
     val relatedCalls = remember(callHistory, contactPhones) { callHistory.filter { item -> contactPhones.any { it == item.normalizedNumber } } }
-    val urgency = remember(relatedCalls) { ContactUrgencyScoreEngine.evaluate(relatedCalls) }
+    val urgencyEntries = remember(relatedCalls) {
+        relatedCalls.map { item ->
+            ContactUrgencyCallEntry(
+                timestamp = item.timestamp,
+                type = when (item.visualType) {
+                    CallVisualType.MISSED -> ContactUrgencyCallType.MISSED
+                    CallVisualType.INCOMING_ANSWERED -> ContactUrgencyCallType.INCOMING_ANSWERED
+                    CallVisualType.OUTGOING_ANSWERED -> ContactUrgencyCallType.OUTGOING_ANSWERED
+                    CallVisualType.OUTGOING_NOT_ANSWERED -> ContactUrgencyCallType.OUTGOING_NOT_ANSWERED
+                    CallVisualType.OUTGOING_REJECTED -> ContactUrgencyCallType.OUTGOING_REJECTED
+                    CallVisualType.INCOMING_CANCELED -> ContactUrgencyCallType.INCOMING_CANCELED
+                },
+            )
+        }
+    }
+    val urgency = remember(urgencyEntries) { ContactUrgencyScoreEngine.evaluate(urgencyEntries) }
     val guessedMatch = remember(callHistory, contact.id) {
         val unresolved = callHistory.firstOrNull { it.matchedContactId == null && it.normalizedNumber.isNotBlank() }
         unresolved?.let { SmartMatchEngine.guessContactName(it.number, listOf(contact)).takeIf { guess -> !guess.isNullOrBlank() && !guess.equals(contact.displayName, true) } }
@@ -525,7 +543,8 @@ private fun ContactDetailsContent(
                                     OutlinedButton(onClick = {
                                         val template = callBehavior.quickSmsTemplate.orEmpty()
                                         localContext.startActivity(
-                                            Intent(localContext, com.opencontacts.app.MainActivity::class.java)
+                                            Intent()
+                                                .setClassName(localContext.packageName, "com.opencontacts.app.MainActivity")
                                                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                                                 .putExtra("navigate_to", "settings/smscomposer")
                                                 .putExtra("sms_to", contact.allPhoneNumbers().firstOrNull()?.value.orEmpty())
