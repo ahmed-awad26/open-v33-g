@@ -37,7 +37,7 @@ class PostCallQuickActionsActivity : ComponentActivity() {
                             name = name,
                             onAddNote = {
                                 startActivity(
-                                    Intent(this, MainActivity::class.java)
+                                    Intent(this@PostCallQuickActionsActivity, MainActivity::class.java)
                                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                                         .putExtra(EXTRA_OPEN_CONTACT_ID, contactId)
                                 )
@@ -53,7 +53,7 @@ class PostCallQuickActionsActivity : ComponentActivity() {
                             },
                             onSendSms = {
                                 startActivity(
-                                    Intent(this, MainActivity::class.java)
+                                    Intent(this@PostCallQuickActionsActivity, MainActivity::class.java)
                                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                                         .putExtra("navigate_to", "settings/smscomposer")
                                         .putExtra("sms_to", number)
@@ -64,7 +64,7 @@ class PostCallQuickActionsActivity : ComponentActivity() {
                             },
                             onMoveToFolder = {
                                 startActivity(
-                                    Intent(this, MainActivity::class.java)
+                                    Intent(this@PostCallQuickActionsActivity, MainActivity::class.java)
                                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                                         .putExtra(EXTRA_OPEN_CONTACT_ID, contactId)
                                 )
@@ -72,7 +72,7 @@ class PostCallQuickActionsActivity : ComponentActivity() {
                             },
                             onChangeTag = {
                                 startActivity(
-                                    Intent(this, MainActivity::class.java)
+                                    Intent(this@PostCallQuickActionsActivity, MainActivity::class.java)
                                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                                         .putExtra(EXTRA_OPEN_CONTACT_ID, contactId)
                                 )

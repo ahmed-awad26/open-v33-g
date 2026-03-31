@@ -398,3 +398,13 @@ private fun describeRecordingsLocation(context: android.content.Context, uriStri
         "App storage/$fallbackPath"
     }
 }
+
+
+private fun buildSystemRingtonePickerIntent(context: android.content.Context, existingUri: String?): Intent =
+    Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
+        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+        putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE))
+        existingUri?.let { putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(it)) }
+    }

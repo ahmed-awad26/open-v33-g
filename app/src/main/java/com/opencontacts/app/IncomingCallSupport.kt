@@ -80,6 +80,7 @@ import com.opencontacts.core.crypto.AppLockRepository
 import com.opencontacts.core.crypto.AppLockSettings
 import com.opencontacts.core.model.ContactSummary
 import com.opencontacts.core.vault.VaultSessionManager
+import com.opencontacts.core.common.PhoneNumberNormalizer
 import com.opencontacts.domain.contacts.ContactRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -144,7 +145,7 @@ object IncomingCallOverlayController {
     }
 }
 
-private object IncomingCallTracker {
+object IncomingCallTracker {
     var lastState: String? = null
     var lastRinging: IncomingCallUiState? = null
     var answered: Boolean = false
@@ -389,7 +390,7 @@ internal fun postIncomingCallNotification(context: Context, call: IncomingCallUi
     manager.notify(INCOMING_NOTIFICATION_ID, builder.build())
 }
 
-private fun postMissedCallNotification(context: Context, call: IncomingCallUiState, settings: AppLockSettings, ringDurationSeconds: Int) {
+internal fun postMissedCallNotification(context: Context, call: IncomingCallUiState, settings: AppLockSettings, ringDurationSeconds: Int) {
     ensureChannels(context, settings)
     val manager = NotificationManagerCompat.from(context)
     if (!manager.areNotificationsEnabled()) return
@@ -632,6 +633,20 @@ private fun lockScreenVisibility(settings: AppLockSettings): Int {
     }
 }
 
+
+private fun privacyTitle(call: ActiveCallUiState, settings: AppLockSettings): String = when (settings.lockScreenNotificationVisibility.uppercase()) {
+    "SHOW_NAME_ONLY" -> call.displayName
+    "SHOW_NUMBER_ONLY" -> call.number
+    "HIDE_SENSITIVE" -> "Incoming call"
+    else -> call.displayName
+}
+
+private fun privacyText(call: ActiveCallUiState, settings: AppLockSettings, fallback: String): String = when (settings.lockScreenNotificationVisibility.uppercase()) {
+    "SHOW_NAME_ONLY" -> fallback
+    "SHOW_NUMBER_ONLY" -> fallback
+    "HIDE_SENSITIVE" -> fallback
+    else -> if (call.number.isNotBlank() && call.number != call.displayName) call.number else fallback
+}
 
 private fun privacyTitle(call: IncomingCallUiState, settings: AppLockSettings): String = when (settings.lockScreenNotificationVisibility.uppercase()) {
     "SHOW_NUMBER_ONLY" -> call.number.ifBlank { "Incoming call" }
@@ -1174,7 +1189,7 @@ private fun IncomingCallCardContainer(call: IncomingCallUiState, modifier: Modif
 
 // ── Call reminder helper ──────────────────────────────────────────────────────
 
-private fun scheduleCallReminder(context: Context, number: String, name: String, delayMinutes: Int) {
+internal fun scheduleCallReminder(context: Context, number: String, name: String, delayMinutes: Int) {
     if (number.isBlank()) return
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
     val triggerAt = System.currentTimeMillis() + delayMinutes * 60_000L
